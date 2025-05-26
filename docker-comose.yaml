@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_DB: pay_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:21.1.1
+    container_name: keycloak
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/pay_db
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: root
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - backend
+
+  paypal-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: paypal-payment-app
+    ports:
+      - "9091:9091"
+    depends_on:
+      - postgres
+      - keycloak
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pay_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_SECURITY_OAUTH2_RESOURCE_SERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/myrealm
+      SPRING_SECURITY_OAUTH2_RESOURCE_SERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/myrealm/protocol/openid-connect/certs
+      PAYPAL_CLIENT_ID: AbdSAMXQQVTiUVTSWJ6bqZtmGpxTtNpteG4SQlJrFwd5BjhZyZBt3P05uvgiF1RMyKc7pAtFVAKzEgL-
+      PAYPAL_CLIENT_SECRET: EEvQ5qtAvMgPn21Ki4wY_CxWlpTl6NeRrrC0L8ZlR8dCXg5fFW2pt9taN_gdWPLMfl_QtfTUg74cb_dt
+      PAYPAL_BASE_URL: https://api.sandbox.paypal.com
+    networks:
+      - backend
+
+volumes:
+  data:
+
+networks:
+  backend:
+
+

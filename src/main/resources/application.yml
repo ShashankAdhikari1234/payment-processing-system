@@ -1,0 +1,32 @@
+server:
+  port: 9091
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/pay_db
+    username: postgres
+    password: root
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  security:
+    oauth2:
+      resource-server:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/myrealm
+          jwk-set-uri: http://localhost:8080/realms/myrealm/protocol/openid-connect/certs
+paypal:
+  client-id: AbdSAMXQQVTiUVTSWJ6bqZtmGpxTtNpteG4SQlJrFwd5BjhZyZBt3P05uvgiF1RMyKc7pAtFVAKzEgL-
+  client-secret: EEvQ5qtAvMgPn21Ki4wY_CxWlpTl6NeRrrC0L8ZlR8dCXg5fFW2pt9taN_gdWPLMfl_QtfTUg74cb_dt
+  base-url: https://api.sandbox.paypal.com
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      paypalApiCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 60000
